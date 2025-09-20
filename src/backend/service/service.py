@@ -4,8 +4,14 @@
 import random
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
+
 
 from src.backend.infrastructure.repository import TaskRepository
+
+# Esecutore thread-pool fisso per i job asincroni dell'app
+
+EXECUTOR = ThreadPoolExecutor(max_workers=100)
 
 
 class TaskServiceSession:
@@ -21,8 +27,7 @@ class TaskServiceSession:
     def createTask(self, title: str) -> dict:
         created = self._repo.create({"title": title})
         task_id = created["id"]
-        t = threading.Thread(target=self._complete_later, args=(task_id,), daemon=True)
-        t.start()
+        EXECUTOR.submit(self._complete_later, task_id)
         return created
 
     def _complete_later(self, task_id: int):
@@ -35,18 +40,15 @@ class TaskServiceSession:
             pass
             # Nuovo: recupero asincrono con ritardo opzionale e callback
 
+
     def getTask(self, task_id: int, callback=None, delay_seconds: float | None = None) -> None:
         """
-        Avvia un thread che, dopo un ritardo opzionale, richiama repository.get_by_id(task_id).
-        Se viene fornito un callback, lo invoca con il risultato (anche None se non trovato).
-        Non restituisce il valore del task (operazione asincrona).
+        Avvia un job nel thread pool che, dopo un ritardo opzionale,
+        richiama repository.get_by_id(task_id). Se viene fornito un callback,
+        lo invoca con il risultato (anche None se non trovato).
         """
-        t = threading.Thread(
-            target=self._get_later,
-            args=(task_id, callback, delay_seconds),
-            daemon=True
-        )
-        t.start()
+        EXECUTOR.submit(self._get_later, task_id, callback, delay_seconds)
+
 
     def _get_later(self, task_id: int, callback, delay_seconds: float | None):
         delay = delay_seconds if delay_seconds is not None else random.uniform(1.0, 4.0)
