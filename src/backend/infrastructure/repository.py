@@ -1,5 +1,5 @@
 from src.backend.core.model import Task
-
+import threading
 
 # INFRASTRUCTURE / REPOSITORY LAYER
 # Definisce l'interfaccia (l'Adattatore) per l'accesso ai dati.
@@ -22,43 +22,98 @@ class TaskRepository:
         raise NotImplementedError
 
 
-# INFRASTRUCTURE / ADAPTERS
-# Implementazioni concrete dell'interfaccia del repository.
-# Questo è dove i dettagli specifici del database (in questo caso, una lista in memoria)
-# sono gestiti.
-
-class InMemoryTaskRepository(TaskRepository):
+class InMemoryTaskStore:
+    """
+    Store condiviso thread-safe per i Task.
+    - Mantiene i dati e il lock.
+    - È pensato come singleton del processo.
+    """
     def __init__(self):
-        # Dati di esempio
-        self.tasks = [
-            Task(id=1, title='Imparare Flask', done=False),
-            Task(id=2, title='Costruire un\'API REST', done=True),
-            Task(id=3, title='Integrare il frontend React', done=False)
-        ]
-        self.current_id = 3
+        self._lock = threading.RLock()
+        # Dati separati per client_id
+        self._tasks_by_client: dict[str, list[Task]] = {}
+        self._current_id_by_client: dict[str, int] = {}
+
+    # Metodi di utilità protetti dal lock per operazioni atomiche
+    def _ensure_client(self, client_id: str):
+        if client_id not in self._tasks_by_client:
+            self._tasks_by_client[client_id] = []
+            self._current_id_by_client[client_id] = 0
+
+    def next_id(self, client_id: str) -> int:
+        with self._lock:
+            self._ensure_client(client_id)
+            self._current_id_by_client[client_id] += 1
+            return self._current_id_by_client[client_id]
+
+    def get_tasks(self, client_id: str) -> list:
+        with self._lock:
+            self._ensure_client(client_id)
+            return self._tasks_by_client[client_id]
+
+    def set_tasks(self, client_id: str, tasks: list):
+        with self._lock:
+            self._ensure_client(client_id)
+            self._tasks_by_client[client_id] = tasks
+
+    def with_lock(self):
+        """
+        Context manager per operazioni consistenti multi-passaggio.
+        Esempio:
+            with store.with_lock():
+                # leggi/modifica tasks in modo atomico
+        """
+        return self._lock
+
+
+
+# Istanza singleton di store condiviso nel processo
+TASK_STORE = InMemoryTaskStore()
+
+
+# INFRASTRUCTURE / ADAPTER
+# Repository senza stato proprio (stateless) che usa lo store condiviso.
+class InMemoryTaskRepository(TaskRepository):
+    def __init__(self, client_id: str, store: InMemoryTaskStore = TASK_STORE):
+        self._store = store
+        self._client_id = client_id
 
     def get_all(self):
-        return [task.to_dict() for task in self.tasks]
+        with self._store.with_lock():
+            tasks = self._store.get_tasks(self._client_id)
+            return [task.to_dict() for task in tasks]
 
     def get_by_id(self, task_id):
-        return next((task.to_dict() for task in self.tasks if task.id == task_id), None)
+        with self._store.with_lock():
+            tasks = self._store.get_tasks(self._client_id)
+            found = next((task for task in tasks if task.id == task_id), None)
+            return found.to_dict() if found else None
 
     def create(self, task_data):
-        self.current_id += 1
-        new_task = Task(id=self.current_id, title=task_data['title'], done=False)
-        self.tasks.append(new_task)
-        return new_task.to_dict()
+        # next_id() è già thread-safe e namespaced per client
+        new_id = self._store.next_id(self._client_id)
+        new_task = Task(id=new_id, title=task_data['title'], done=False)
+        with self._store.with_lock():
+            tasks = self._store.get_tasks(self._client_id)
+            tasks.append(new_task)
+            self._store.set_tasks(self._client_id, tasks)
+            return new_task.to_dict()
 
     def update(self, task_id, task_data):
-        task = next((t for t in self.tasks if t.id == task_id), None)
-        if task is None:
-            return None
-
-        task.title = task_data.get('title', task.title)
-        task.done = task_data.get('done', task.done)
-        return task.to_dict()
+        with self._store.with_lock():
+            tasks = self._store.get_tasks(self._client_id)
+            task = next((t for t in tasks if t.id == task_id), None)
+            if task is None:
+                return None
+            task.title = task_data.get('title', task.title)
+            task.done = task_data.get('done', task.done)
+            return task.to_dict()
 
     def delete(self, task_id):
-        initial_len = len(self.tasks)
-        self.tasks = [t for t in self.tasks if t.id != task_id]
-        return len(self.tasks) < initial_len
+        with self._store.with_lock():
+            tasks = self._store.get_tasks(self._client_id)
+            initial_len = len(tasks)
+            tasks = [t for t in tasks if t.id != task_id]
+            self._store.set_tasks(self._client_id, tasks)
+            return len(tasks) < initial_len
+

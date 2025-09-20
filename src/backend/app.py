@@ -1,17 +1,40 @@
 # app.py
 
 import os
-from flask import Flask, send_from_directory, jsonify, request, redirect, url_for
+import uuid
+from flask import Flask, send_from_directory, jsonify, request, redirect, url_for, session
 from flask_swagger_ui import get_swaggerui_blueprint
 from flasgger import Swagger  # Importa la libreria Flasgger
 
 from flask_cors import CORS
 
-from infrastructure.repository import  InMemoryTaskRepository
+from infrastructure.repository import InMemoryTaskRepository, InMemoryTaskStore
 from service.service import TaskService
+
+TASK_STORE = InMemoryTaskStore()
+try:
+    from flask import g
+except Exception:
+    g = None  # opzionale, permette di importare questo modulo anche senza Flask
+
+def get_task_repository(client_id: str) -> InMemoryTaskRepository:
+    """
+    Ritorna un repository per-request (se in contesto Flask),
+    altrimenti una nuova istanza stateless che usa lo store condiviso.
+    """
+    if g is not None:
+        repo = getattr(g, "_task_repo_"+client_id, None)
+        if repo is None:
+            repo = InMemoryTaskRepository(store=TASK_STORE, client_id=client_id)
+            g._task_repo = repo
+        return repo
+    # Fallback: istanza nuova stateless (stesso store condiviso)
+    return InMemoryTaskRepository(store=TASK_STORE, client_id=client_id)
+
 
 #app = Flask(__name__)
 app = Flask(__name__, static_folder='frontend/chatbot-ai-fe/dist', static_url_path='/static')
+app.secret_key = 'tropp-secret' # Change this to a long, random string!
 swagger = Swagger(app)
 
 
@@ -37,14 +60,19 @@ CORS(app)
 # Il livello più esterno che utilizza il servizio per esporre la funzionalità tramite
 # l'interfaccia web (in questo caso, Flask).
 
-app = Flask(__name__)
-CORS(app)
-swagger = Swagger(app)
+#app = Flask(__name__)
+#CORS(app)
+#swagger = Swagger(app)
 
 # Inizializzazione degli strati dell'architettura
-task_repository = InMemoryTaskRepository()
-task_service = TaskService(repository=task_repository)
+#task_repository = InMemoryTaskRepository()
+#ßtask_service = TaskService(repository=task_repository)
 
+
+@app.route('/api/me')
+def home():
+    client_id = get_or_create_client_id()
+    return f"Your client ID is: {client_id}"
 
 # Endpoint API per ottenere tutte le attività
 @app.route('/api/tasks', methods=['GET'])
@@ -73,8 +101,10 @@ def get_tasks():
                   done:
                     type: boolean
     """
-    all_tasks = task_service.get_all_tasks()
-    return jsonify({'tasks': all_tasks})
+    client_id = get_or_create_client_id()
+    repo = get_task_repository(client_id)
+
+    return jsonify({'tasks': repo.get_all()})
 
 
 # Endpoint API per ottenere una singola attività
@@ -98,10 +128,13 @@ def get_task(task_id):
       404:
         description: Attività non trovata.
     """
-    task = task_service.get_task_by_id(task_id)
+    client_id = get_or_create_client_id()
+
+    repo = get_task_repository(client_id)
+    task = repo.get_by_id(task_id)
     if task is None:
-        return jsonify({'error': 'Attività non trovata'}), 404
-    return jsonify({'task': task})
+        return jsonify({"error": "Task non trovata"}), 404
+    return jsonify({"task": task})
 
 
 # Endpoint API per creare una nuova attività
@@ -131,11 +164,15 @@ def create_task():
       400:
         description: Dati non validi.
     """
-    if not request.json or 'title' not in request.json:
-        return jsonify({'error': 'Dati non validi'}), 400
+    data = request.get_json(silent=True) or {}
+    title = data.get("title")
+    if not title:
+        return jsonify({"error": "Campo 'title' obbligatorio"}), 400
+    client_id = get_or_create_client_id()
 
-    new_task = task_service.add_task(request.json)
-    return jsonify({'task': new_task}), 201
+    repo = get_task_repository(client_id)
+    task = repo.create({"title": title})
+    return jsonify({"task": task}), 201
 
 
 # Endpoint API per aggiornare un'attività esistente
@@ -171,14 +208,14 @@ def update_task(task_id):
       404:
         description: Attività non trovata.
     """
-    if not request.json:
-        return jsonify({'error': 'Dati non validi'}), 400
+    data = request.get_json(silent=True) or {}
+    client_id = get_or_create_client_id()
 
-    task = task_service.update_task(task_id, request.json)
-    if task is None:
-        return jsonify({'error': 'Attività non trovata'}), 404
-
-    return jsonify({'task': task})
+    repo = get_task_repository(client_id)
+    updated = repo.update(task_id, data)
+    if updated is None:
+        return jsonify({"error": "Task non trovata"}), 404
+    return jsonify({"task": updated})
 
 
 # Endpoint API per eliminare un'attività
@@ -202,12 +239,28 @@ def delete_task(task_id):
       404:
         description: Attività non trovata.
     """
-    is_deleted = task_service.delete_task(task_id)
-    if not is_deleted:
-        return jsonify({'error': 'Attività non trovata'}), 404
+    repo = get_task_repository()
+    ok = repo.delete(task_id)
+    if not ok:
+        return jsonify({"error": "Task non trovata"}), 404
+    return jsonify({"result": True})
 
-    return jsonify({'result': True})
+def get_or_create_client_id():
+    # Check if 'client_id' exists in the session.
+    # The session object is a dictionary-like container.
+    if 'client_id' not in session:
+        # If not, generate a new UUID and store it in the session.
+        session['client_id'] = str(uuid.uuid4())
+    # Return the client ID.
+    return session['client_id']
 
+# def get_or_create_client_id():
+#     client_id = request.cookies.get('client_id')
+#     response = make_response()
+#     if not client_id:
+#         user_id = str(uuid.uuid4())
+#         response.set_cookie('client_id', user_id, httponly=True, samesite='Lax')
+#     return client_id, response
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 3000))
