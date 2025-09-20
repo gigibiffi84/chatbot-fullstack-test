@@ -17,4 +17,4 @@ Note
 10) Scaffold backend app with exagonal layers
 11) Add specific client_id session bound to http session
 12) Add client_id to service for key
-13) 
+13) Add async operation on current user session task to update it

@@ -5,6 +5,10 @@ import uuid
 from flask import Flask, send_from_directory, jsonify, request, redirect, url_for, session
 from flask_swagger_ui import get_swaggerui_blueprint
 from flasgger import Swagger  # Importa la libreria Flasgger
+import threading
+import time
+import random
+
 
 from flask_cors import CORS
 
@@ -23,7 +27,8 @@ def get_task_repository(client_id: str) -> InMemoryTaskRepository:
     altrimenti una nuova istanza stateless che usa lo store condiviso.
     """
     if g is not None:
-        repo = getattr(g, "_task_repo_"+client_id, None)
+        attr_name = f"_task_repo_{client_id}"
+        repo = getattr(g, attr_name, None)
         if repo is None:
             repo = InMemoryTaskRepository(store=TASK_STORE, client_id=client_id)
             g._task_repo = repo
@@ -37,6 +42,32 @@ app = Flask(__name__, static_folder='frontend/chatbot-ai-fe/dist', static_url_pa
 app.secret_key = 'tropp-secret' # Change this to a long, random string!
 swagger = Swagger(app)
 
+class TaskServiceSession:
+    """
+    Servizio con scope di sessione:
+    - prende client_id nel costruttore,
+    - usa il repository per creare il task,
+    - avvia un job asincrono che dopo X secondi imposta done=True.
+    """
+    def __init__(self, client_id: str):
+        self._client_id = client_id
+        self._repo = get_task_repository(client_id)
+
+    def create(self, title: str) -> dict:
+        created = self._repo.create({"title": title})
+        task_id = created["id"]
+        t = threading.Thread(target=self._complete_later, args=(task_id,), daemon=True)
+        t.start()
+        return created
+
+    def _complete_later(self, task_id: int):
+        delay = random.uniform(5.0, 10.0)
+        time.sleep(delay)
+        try:
+            self._repo.update(task_id, {"done": True})
+        except Exception:
+            # Evita crash silenziosi del thread di background
+            pass
 
 # Route per reindirizzare automaticamente
 @app.route('/docs')
@@ -170,8 +201,10 @@ def create_task():
         return jsonify({"error": "Campo 'title' obbligatorio"}), 400
     client_id = get_or_create_client_id()
 
-    repo = get_task_repository(client_id)
-    task = repo.create({"title": title})
+
+    service = TaskServiceSession(client_id)
+    task = service.create(title)
+
     return jsonify({"task": task}), 201
 
 
