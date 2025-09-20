@@ -1,8 +1,67 @@
 # SERVICE LAYER
 # Contiene la logica di business.
 # Non sa nulla dell'implementazione del database, interagisce solo con l'interfaccia del repository.
+import random
+import threading
+import time
+
 from src.backend.infrastructure.repository import TaskRepository
 
+
+class TaskServiceSession:
+    """
+    Servizio con scope di sessione:
+    - prende client_id nel costruttore,
+    - usa il repository per creare il task,
+    - avvia un job asincrono che dopo X secondi imposta done=True.
+    """
+    def __init__(self, repository: TaskRepository):
+        self._repo = repository
+
+    def createTask(self, title: str) -> dict:
+        created = self._repo.create({"title": title})
+        task_id = created["id"]
+        t = threading.Thread(target=self._complete_later, args=(task_id,), daemon=True)
+        t.start()
+        return created
+
+    def _complete_later(self, task_id: int):
+        delay = random.uniform(5.0, 10.0)
+        time.sleep(delay)
+        try:
+            self._repo.update(task_id, {"done": True})
+        except Exception:
+            # Evita crash silenziosi del thread di background
+            pass
+            # Nuovo: recupero asincrono con ritardo opzionale e callback
+
+    def getTask(self, task_id: int, callback=None, delay_seconds: float | None = None) -> None:
+        """
+        Avvia un thread che, dopo un ritardo opzionale, richiama repository.get_by_id(task_id).
+        Se viene fornito un callback, lo invoca con il risultato (anche None se non trovato).
+        Non restituisce il valore del task (operazione asincrona).
+        """
+        t = threading.Thread(
+            target=self._get_later,
+            args=(task_id, callback, delay_seconds),
+            daemon=True
+        )
+        t.start()
+
+    def _get_later(self, task_id: int, callback, delay_seconds: float | None):
+        delay = delay_seconds if delay_seconds is not None else random.uniform(1.0, 4.0)
+        time.sleep(delay)
+        try:
+            result = self._repo.get_by_id(task_id)
+            if callable(callback):
+                try:
+                    callback(result)
+                except Exception:
+                    # Non propagare eccezioni del callback
+                    pass
+        except Exception:
+            # Non propagare eccezioni del fetch asincrono
+            pass
 
 class TaskService:
     def __init__(self, repository: TaskRepository):

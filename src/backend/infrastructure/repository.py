@@ -15,11 +15,12 @@ class TaskRepository:
     def create(self, task):
         raise NotImplementedError
 
-    def update(self, task):
+    def update(self, task_id, task_data):
         raise NotImplementedError
 
     def delete(self, task_id):
         raise NotImplementedError
+
 
 
 class InMemoryTaskStore:

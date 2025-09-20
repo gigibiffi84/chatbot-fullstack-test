@@ -13,7 +13,7 @@ import random
 from flask_cors import CORS
 
 from infrastructure.repository import InMemoryTaskRepository, InMemoryTaskStore
-from service.service import TaskService
+from src.backend.service.service import TaskServiceSession
 
 TASK_STORE = InMemoryTaskStore()
 try:
@@ -42,32 +42,7 @@ app = Flask(__name__, static_folder='frontend/chatbot-ai-fe/dist', static_url_pa
 app.secret_key = 'tropp-secret' # Change this to a long, random string!
 swagger = Swagger(app)
 
-class TaskServiceSession:
-    """
-    Servizio con scope di sessione:
-    - prende client_id nel costruttore,
-    - usa il repository per creare il task,
-    - avvia un job asincrono che dopo X secondi imposta done=True.
-    """
-    def __init__(self, client_id: str):
-        self._client_id = client_id
-        self._repo = get_task_repository(client_id)
 
-    def create(self, title: str) -> dict:
-        created = self._repo.create({"title": title})
-        task_id = created["id"]
-        t = threading.Thread(target=self._complete_later, args=(task_id,), daemon=True)
-        t.start()
-        return created
-
-    def _complete_later(self, task_id: int):
-        delay = random.uniform(5.0, 10.0)
-        time.sleep(delay)
-        try:
-            self._repo.update(task_id, {"done": True})
-        except Exception:
-            # Evita crash silenziosi del thread di background
-            pass
 
 # Route per reindirizzare automaticamente
 @app.route('/docs')
@@ -200,10 +175,9 @@ def create_task():
     if not title:
         return jsonify({"error": "Campo 'title' obbligatorio"}), 400
     client_id = get_or_create_client_id()
-
-
-    service = TaskServiceSession(client_id)
-    task = service.create(title)
+    repo = get_task_repository(client_id)
+    service = TaskServiceSession(repo)
+    task = service.createTask(title)
 
     return jsonify({"task": task}), 201
 
