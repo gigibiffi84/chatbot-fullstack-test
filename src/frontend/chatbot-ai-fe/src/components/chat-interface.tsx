@@ -7,7 +7,7 @@ import {useChat} from "../hooks/use-chat.ts";
 
 export function ChatInterface() {
     /*isLoading, isSending,*/
-  const { messages, status,  sendMessage, startNewChat, canSendMessage, clearMessages } = useChat()
+  const { messages, status,  sendMessage, startNewChat, canSendMessage } = useChat()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -20,7 +20,7 @@ export function ChatInterface() {
     <div className="max-w-4xl mx-auto h-screen flex flex-col">
       {/* Header */}
       <div className="p-4">
-        <ChatHeader onStartNewChat={startNewChat} onClearMessages={clearMessages} disabled={!canSendMessage} />
+        <ChatHeader onStartNewChat={startNewChat} disabled={!canSendMessage} />
       </div>
 
       {/* Messages Area */}

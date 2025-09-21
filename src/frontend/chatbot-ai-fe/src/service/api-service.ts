@@ -3,7 +3,7 @@ import axios, {type AxiosInstance, type AxiosResponse} from "axios"
 // Types for the API
 export interface Task {
     id: string
-    message: string
+    msg: string
     files?: File[]
     done: boolean
     msgtext?: string
@@ -91,6 +91,13 @@ class ApiService {
         const response: AxiosResponse<Task[]> = await this.http.get(`tasks`)
 
         return response.data
+    }
+
+    // start new chat on backend side simply reset current session
+    async startNewChat(): Promise<boolean> {
+        await this.http.post(`newchat`)
+
+        return Promise.resolve(true)
     }
 }
 

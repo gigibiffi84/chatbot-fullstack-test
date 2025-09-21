@@ -42,6 +42,20 @@ export function useChat(): UseChatReturn {
         setMessages((prev) => prev.map((msg) => (msg.id === id ? {...msg, ...updates} : msg)))
     }, [])
 
+    useEffect(() => {
+        const fetchSessionMessages = async () => {
+            const sessionMessages = await apiService.getAllTasks()
+            sessionMessages.forEach(t => {
+                const userMessageId = `user-${Date.now()}`
+                addMessage({
+                    id: userMessageId,
+                    type: "user",
+                    content: t.msg})
+            })
+        }
+        fetchSessionMessages()
+    }, []);
+
     const {start: startPolling, stop: stopPolling} = usePolling(
         async () => {
             if (!currentTaskRef.current) return false
@@ -167,12 +181,18 @@ export function useChat(): UseChatReturn {
     const startNewChat = useCallback(() => {
         if (!canSendMessage) return
 
-        // Stop current polling
-        stopPolling()
-        currentTaskRef.current = null
+        //invoke start new chat api
+        apiService.startNewChat().then(response => {
+            console.log("startNewChat response:", response)
+            stopPolling()
+            currentTaskRef.current = null
 
-        // Open new tab for new session
-        window.open(window.location.href, "_blank")
+            // Open new tab for new session
+            window.open(window.location.href, "_blank")
+        })
+
+        // Stop current polling
+
     }, [canSendMessage, stopPolling])
 
     const clearMessages = useCallback(() => {
