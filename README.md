@@ -25,3 +25,4 @@ Note
 18) TODO: validate create task with attachements to get only pdf files
 19) TODO: load all task list in session and enable fact check for just completed tasks
 20) TODO: split async operations to update task in two states: file ingestion, ai response received
+21) TODO: create docker image and docker compose to test it like production
