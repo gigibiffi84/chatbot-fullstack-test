@@ -49,6 +49,29 @@ swagger = Swagger(app)
 def docs():
     return redirect(url_for('swagger_ui.show_swagger_ui'))
 
+
+@app.route('/api/newchat', methods=['POST'])
+def new_chat():
+    """
+    Create a new chat session
+    This endpoint creates a new chat session with a unique client ID.
+    ---
+    tags:
+      - Chat
+    responses:
+      200:
+        description: New chat session created successfully.
+        schema:
+          type: object
+          properties:
+            client_id:
+              type: string
+              format: uuid
+    """
+    session['client_id'] = str(uuid.uuid4())
+    return jsonify({"client_id": session['client_id']})
+
+
 @app.route("/")
 def serve_react_app():
     return send_from_directory(app.static_folder, 'index.html')
@@ -111,7 +134,7 @@ def get_tasks():
     client_id = get_or_create_client_id()
     repo = get_task_repository(client_id)
 
-    return jsonify({'tasks': repo.get_all()})
+    return jsonify(repo.get_all())
 
 
 # Endpoint API per ottenere una singola attività
@@ -298,6 +321,8 @@ def delete_task(task_id):
     if not ok:
         return jsonify({"error": "Task non trovata"}), 404
     return jsonify({"result": True})
+
+
 
 def get_or_create_client_id():
     # Check if 'client_id' exists in the session.

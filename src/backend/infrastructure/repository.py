@@ -107,7 +107,7 @@ class InMemoryTaskRepository(TaskRepository):
             if task is None:
                 return None
             task.msg = task_data.get('msg', task.msg)
-            task.msgresponse = task_data.get('msgresponse', '')
+            task.msgresponse = task_data.get('msgresponse', '') + 'for '+task.msg
             task.done = task_data.get('done', task.done)
             return task.to_dict()
 
