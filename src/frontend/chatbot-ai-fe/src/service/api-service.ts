@@ -120,12 +120,12 @@ class ApiService {
         return Promise.resolve(true)
     }
 
-    async getFileContent(taskId: string, fileName: string): Promise<string> {
-        const response: AxiosResponse<{ content: string }> = await axios.get(
-            `${this.baseURL}/tasks/${taskId}/files/${encodeURIComponent(fileName)}`,
+    async getFileContent(taskId: string, fileIdx: number): Promise<string> {
+        const response: AxiosResponse<Pick<CreateTaskRequest, 'fileStructures' |'blobs'>> = await axios.get(
+            `${this.baseURL}/tasks/${taskId}/files/${fileIdx}`,
         )
 
-        return response.data.content
+        return response.data?.blobs?.[0] ?? ''
     }
 }
 

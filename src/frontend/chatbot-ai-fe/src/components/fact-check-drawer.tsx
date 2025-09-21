@@ -4,7 +4,7 @@ import { useState } from "react"
 import { X, FileText, Loader2 } from "lucide-react"
 import {ScrollArea} from "./ui/scroll-area.tsx";
 import {Button} from "./ui/button.tsx";
-import {cn} from "../service/utils.ts";
+import {PDFViewer} from "./pdf-viewer.tsx";
 
 interface FactCheckDrawerProps {
     isOpen: boolean
@@ -23,13 +23,15 @@ export function FactCheckDrawer({
                                     originalResponse,
                                     isLoading,
                                 }: FactCheckDrawerProps) {
-    const [activePanel, setActivePanel] = useState<"file" | "response">("file")
+    const [activePanel] = useState<"file" | "response">("file")
 
     if (!isOpen) return null
 
+    const isPDF = fileName.toLowerCase().endsWith(".pdf") || fileContent.startsWith("JVBERi0")
+
     return (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-            <div className="fixed right-0 top-0 h-full w-full max-w-4xl bg-background border-l shadow-lg">
+        <div className="fixed inset-0 z-50 bg-background/50">
+            <div className="fixed right-0 top-0 h-full w-full max-w-5xl bg-background border-l shadow-lg">
                 <div className="flex h-full flex-col">
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b">
@@ -43,7 +45,7 @@ export function FactCheckDrawer({
                         </Button>
                     </div>
 
-                    {/* Panel Toggle */}
+                    {/* Panel Toggle
                     <div className="flex border-b">
                         <button
                             onClick={() => setActivePanel("file")}
@@ -63,7 +65,7 @@ export function FactCheckDrawer({
                         >
                             AI Response
                         </button>
-                    </div>
+                    </div> */}
 
                     {/* Content */}
                     <div className="flex-1 overflow-hidden">
@@ -82,11 +84,17 @@ export function FactCheckDrawer({
                                         <div className="p-4 border-b bg-muted/50">
                                             <h3 className="font-medium text-sm">Original File Content</h3>
                                         </div>
-                                        <ScrollArea className="h-[calc(50vh-6rem)]">
-                                            <div className="p-4">
-                                                <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">{fileContent}</pre>
-                                            </div>
-                                        </ScrollArea>
+                                        <div className="h-[calc(50vh-6rem)]">
+                                            {isPDF ? (
+                                                <PDFViewer base64Content={fileContent} fileName={fileName} className="h-full" />
+                                            ) : (
+                                                <ScrollArea className="h-full">
+                                                    <div className="p-4">
+                                                        <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">{fileContent}</pre>
+                                                    </div>
+                                                </ScrollArea>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="flex-1">
                                         <div className="p-4 border-b bg-muted/50">
@@ -102,15 +110,26 @@ export function FactCheckDrawer({
 
                                 {/* Mobile: Tabbed view */}
                                 <div className="md:hidden w-full">
-                                    <ScrollArea className="h-full">
-                                        <div className="p-4">
-                                            {activePanel === "file" ? (
-                                                <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">{fileContent}</pre>
+                                    <div className="h-full">
+                                        {activePanel === "file" ? (
+                                            /* Use PDF viewer for mobile PDF display */
+                                            isPDF ? (
+                                                <PDFViewer base64Content={fileContent} fileName={fileName} className="h-full" />
                                             ) : (
-                                                <div className="text-sm leading-relaxed whitespace-pre-wrap">{originalResponse}</div>
-                                            )}
-                                        </div>
-                                    </ScrollArea>
+                                                <ScrollArea className="h-full">
+                                                    <div className="p-4">
+                                                        <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">{fileContent}</pre>
+                                                    </div>
+                                                </ScrollArea>
+                                            )
+                                        ) : (
+                                            <ScrollArea className="h-full">
+                                                <div className="p-4">
+                                                    <div className="text-sm leading-relaxed whitespace-pre-wrap">{originalResponse}</div>
+                                                </div>
+                                            </ScrollArea>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}

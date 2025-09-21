@@ -32,8 +32,8 @@ export function useFactCheck(): UseFactCheckReturn {
         })
 
         try {
-            const fileContent = await apiService.getFileContent(taskId, fileName)
-
+            const blobData = await apiService.getFileContent(taskId.split('bot-')[1], 0)
+            const fileContent = blobData.split(',')[1]
             setFactCheckData({
                 fileName,
                 fileContent,

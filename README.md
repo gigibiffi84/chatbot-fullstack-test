@@ -20,5 +20,7 @@ Note
 13) Add async operation on current user session task to update it
 14) Added FE scaffolding
 15) Added FE+BE logic integration (send message, poll for response, show response)
-16) TODO: add files integration
-17) TODO: add fact-check file compare
+16) Added files integration with fileStructures and blobs as base64
+17) Added fact check compare with pdf viewer
+18) TODO: load all task list in session and enable fact check for just completed tasks
+19) split async operations to update task in two states: file ingestion, ai response received

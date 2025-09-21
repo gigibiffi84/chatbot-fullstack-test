@@ -119,7 +119,7 @@ export function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
           </div>
         </div>
 
-        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} accept="*/*" />
+        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} accept="application/pdf" />
       </form>
     </Card>
   )

@@ -106,9 +106,9 @@ export function ChatMessageComponent({ message, onFactCheck, originalFiles }: Ch
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
-                                variant="ghost"
+                                variant="link"
                                 size="sm"
-                                className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity duration-200 bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+                                className="absolute bg-background/10 top-2 right-2 h-6 w-6 p-0 opacity-30 group-hover:opacity-100 hover:opacity-100 transition-opacity duration-200 hover:bg-background/90 backdrop-blur-sm"
                             >
                                 <MoreVertical className="w-3 h-3" />
                                 <span className="sr-only">Message options</span>
