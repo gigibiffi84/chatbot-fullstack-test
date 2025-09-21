@@ -22,5 +22,6 @@ Note
 15) Added FE+BE logic integration (send message, poll for response, show response)
 16) Added files integration with fileStructures and blobs as base64
 17) Added fact check compare with pdf viewer
-18) TODO: load all task list in session and enable fact check for just completed tasks
-19) split async operations to update task in two states: file ingestion, ai response received
+18) TODO: validate create task with attachements to get only pdf files
+19) TODO: load all task list in session and enable fact check for just completed tasks
+20) TODO: split async operations to update task in two states: file ingestion, ai response received
