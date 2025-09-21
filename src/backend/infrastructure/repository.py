@@ -41,11 +41,11 @@ class InMemoryTaskStore:
             self._tasks_by_client[client_id] = []
             self._current_id_by_client[client_id] = 0
 
-    def next_id(self, client_id: str) -> int:
-        with self._lock:
-            self._ensure_client(client_id)
-            self._current_id_by_client[client_id] += 1
-            return self._current_id_by_client[client_id]
+    # def next_id(self, client_id: str) -> int:
+    #     with self._lock:
+    #         self._ensure_client(client_id)
+    #         self._current_id_by_client[client_id] += 1
+    #         return self._current_id_by_client[client_id]
 
     def get_tasks(self, client_id: str) -> list:
         with self._lock:
@@ -87,13 +87,13 @@ class InMemoryTaskRepository(TaskRepository):
     def get_by_id(self, task_id):
         with self._store.with_lock():
             tasks = self._store.get_tasks(self._client_id)
-            found = next((task for task in tasks if task.id == task_id), None)
+            found = next((task for task in tasks if task.uuid == task_id), None)
             return found.to_dict() if found else None
 
     def create(self, task_data):
         # next_id() è già thread-safe e namespaced per client
-        new_id = self._store.next_id(self._client_id)
-        new_task = Task(id=new_id, title=task_data['title'], done=False)
+        # new_id = self._store.next_id(self._client_id)
+        new_task = Task(uuid=task_data["uuid"], msg=task_data['msg'], done=False, msgresponse='')
         with self._store.with_lock():
             tasks = self._store.get_tasks(self._client_id)
             tasks.append(new_task)
@@ -103,10 +103,11 @@ class InMemoryTaskRepository(TaskRepository):
     def update(self, task_id, task_data):
         with self._store.with_lock():
             tasks = self._store.get_tasks(self._client_id)
-            task = next((t for t in tasks if t.id == task_id), None)
+            task = next((t for t in tasks if t.uuid == task_id), None)
             if task is None:
                 return None
-            task.title = task_data.get('title', task.title)
+            task.msg = task_data.get('msg', task.msg)
+            task.msgresponse = task_data.get('msgresponse', '')
             task.done = task_data.get('done', task.done)
             return task.to_dict()
 
@@ -114,7 +115,7 @@ class InMemoryTaskRepository(TaskRepository):
         with self._store.with_lock():
             tasks = self._store.get_tasks(self._client_id)
             initial_len = len(tasks)
-            tasks = [t for t in tasks if t.id != task_id]
+            tasks = [t for t in tasks if t.uuid != task_id]
             self._store.set_tasks(self._client_id, tasks)
             return len(tasks) < initial_len
 

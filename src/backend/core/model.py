@@ -3,10 +3,11 @@
 # da qualsiasi dettaglio tecnologico esterno.
 
 class Task:
-    def __init__(self, id, title, done=False):
-        self.id = id
-        self.title = title
+    def __init__(self, uuid, msg, msgresponse, done=False):
+        self.uuid = uuid
+        self.msg = msg
         self.done = done
+        self.msgresponse= msgresponse
 
     def to_dict(self):
-        return {'id': self.id, 'title': self.title, 'done': self.done}
+        return {'uuid': self.uuid,  'msg': self.msg, 'done': self.done, 'msgresponse': self.msgresponse}

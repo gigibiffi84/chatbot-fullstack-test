@@ -24,17 +24,17 @@ class TaskServiceSession:
     def __init__(self, repository: TaskRepository):
         self._repo = repository
 
-    def createTask(self, title: str) -> dict:
-        created = self._repo.create({"title": title})
-        task_id = created["id"]
+    def createTask(self, uuid: str, msg: str) -> dict:
+        created = self._repo.create({"msg": msg, "uuid": uuid})
+        task_id = created["uuid"]
         EXECUTOR.submit(self._complete_later, task_id)
         return created
 
-    def _complete_later(self, task_id: int):
+    def _complete_later(self, task_id: str):
         delay = random.uniform(5.0, 10.0)
         time.sleep(delay)
         try:
-            self._repo.update(task_id, {"done": True})
+            self._repo.update(task_id, {"done": True, "msgresponse": "Task completed!"})
         except Exception:
             # Evita crash silenziosi del thread di background
             pass

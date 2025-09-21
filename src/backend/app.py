@@ -100,9 +100,10 @@ def get_tasks():
               items:
                 type: object
                 properties:
-                  id:
-                    type: integer
-                  title:
+                  uuid:
+                    type: string
+                    format: uuid
+                  msg:
                     type: string
                   done:
                     type: boolean
@@ -114,7 +115,7 @@ def get_tasks():
 
 
 # Endpoint API per ottenere una singola attività
-@app.route('/api/tasks/<int:task_id>', methods=['GET'])
+@app.route('/api/tasks/<string:task_id>', methods=['GET'])
 def get_task(task_id):
     """
     Dettagli di un'attività
@@ -125,12 +126,26 @@ def get_task(task_id):
     parameters:
       - name: task_id
         in: path
-        type: integer
+        type: string
+        format: uuid
         required: true
-        description: ID dell'attività.
+        description: UUID dell'attività.
     responses:
       200:
         description: Dettagli dell'attività.
+        schema:
+          type: object
+          properties:
+            task:
+              type: object
+              properties:
+                uuid:
+                  type: string
+                  format: uuid
+                msg:
+                  type: string
+                done:
+                  type: boolean
       404:
         description: Attività non trovata.
     """
@@ -140,7 +155,7 @@ def get_task(task_id):
     task = repo.get_by_id(task_id)
     if task is None:
         return jsonify({"error": "Task non trovata"}), 404
-    return jsonify({"task": task})
+    return jsonify(task)
 
 
 # Endpoint API per creare una nuova attività
@@ -159,31 +174,48 @@ def create_task():
         schema:
           type: object
           properties:
-            title:
+            msg:
               type: string
-              example: "Nome della nuova attività"
+              example: "Testo della nuova attività"
           required:
-            - title
+            - msg
     responses:
       201:
         description: Attività creata con successo.
+        schema:
+          type: object
+          properties:
+            task:
+              type: object
+              properties:
+                uuid:
+                  type: string
+                  format: uuid
+                msg:
+                  type: string
+                done:
+                  type: boolean
       400:
         description: Dati non validi.
     """
     data = request.get_json(silent=True) or {}
-    title = data.get("title")
+    title = data.get("msg")
+    uuid = data.get("uuid")
+
+    if not uuid:
+        return jsonify({"error": "Campo 'uuid' obbligatorio"}), 400
     if not title:
-        return jsonify({"error": "Campo 'title' obbligatorio"}), 400
+        return jsonify({"error": "Campo 'msg' obbligatorio"}), 400
     client_id = get_or_create_client_id()
     repo = get_task_repository(client_id)
     service = TaskServiceSession(repo)
-    task = service.createTask(title)
+    task = service.createTask(uuid, title)
 
     return jsonify({"task": task}), 201
 
 
 # Endpoint API per aggiornare un'attività esistente
-@app.route('/api/tasks/<int:task_id>', methods=['PUT'])
+@app.route('/api/tasks/<string:task_id>', methods=['PUT'])
 def update_task(task_id):
     """
     Aggiorna un'attività esistente
@@ -194,22 +226,36 @@ def update_task(task_id):
     parameters:
       - name: task_id
         in: path
-        type: integer
+        type: string
+        format: uuid
         required: true
-        description: ID dell'attività da aggiornare.
+        description: UUID dell'attività da aggiornare.
       - name: body
         in: body
         required: true
         schema:
           type: object
           properties:
-            title:
+            msg:
               type: string
             done:
               type: boolean
     responses:
       200:
         description: Attività aggiornata con successo.
+        schema:
+          type: object
+          properties:
+            task:
+              type: object
+              properties:
+                uuid:
+                  type: string
+                  format: uuid
+                msg:
+                  type: string
+                done:
+                  type: boolean
       400:
         description: Dati non validi.
       404:
@@ -226,7 +272,7 @@ def update_task(task_id):
 
 
 # Endpoint API per eliminare un'attività
-@app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+@app.route('/api/tasks/<string:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     """
     Elimina un'attività
@@ -237,9 +283,10 @@ def delete_task(task_id):
     parameters:
       - name: task_id
         in: path
-        type: integer
+        type: string
+        format: uuid
         required: true
-        description: ID dell'attività da eliminare.
+        description: UUID dell'attività da eliminare.
     responses:
       200:
         description: Attività eliminata con successo.
