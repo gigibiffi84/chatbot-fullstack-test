@@ -18,3 +18,7 @@ Note
 11) Add specific client_id session bound to http session
 12) Add client_id to service for key
 13) Add async operation on current user session task to update it
+14) Added FE scaffolding
+15) Added FE+BE logic integration (send message, poll for response, show response)
+16) TODO: add files integration
+17) TODO: add fact-check file compare
