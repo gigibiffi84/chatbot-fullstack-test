@@ -1,88 +1,97 @@
-import axios, { type AxiosResponse } from "axios"
+import axios, {type AxiosInstance, type AxiosResponse} from "axios"
 
 // Types for the API
 export interface Task {
-  id: string
-  message: string
-  files?: File[]
-  done: boolean
-  msgtext?: string
-  createdAt: string
-  updatedAt: string
+    id: string
+    message: string
+    files?: File[]
+    done: boolean
+    msgtext?: string
+    createdAt: string
+    updatedAt: string
 }
 
 export interface CreateTaskRequest {
-  message: string
-  files?: File[]
+    msg: string
+    uuid: string
+    files?: File[]
 }
 
 export interface CreateTaskResponse {
-  id: string
-  message: string
-  done: boolean
-  msgtext?: string
+
 }
 
 export interface TaskStatusResponse {
-  id: string
-  done: boolean
-  msgtext?: string
-  message: string
+    uuid: string
+    done: boolean
+    msgresponse?: string
+    message: string
 }
 
 // API Service class with CRUD operations
 class ApiService {
-  private baseURL: string
-
-  constructor(baseURL = "/api") {
-    this.baseURL = baseURL
-  }
-
-  // Create a new task
-  async createTask(data: CreateTaskRequest): Promise<CreateTaskResponse> {
-    const formData = new FormData()
-    formData.append("message", data.message)
-
-    if (data.files && data.files.length > 0) {
-      data.files.forEach((file, index) => {
-        formData.append(`file_${index}`, file)
-      })
+    private baseURL: string
+    private http: AxiosInstance
+    
+    constructor(baseURL = "/api") {
+        this.baseURL = baseURL
+        this.http = axios.create({
+            baseURL: this.baseURL,
+            withCredentials: true, // include cookies for session-based client recognition
+        })
     }
 
-    const response: AxiosResponse<CreateTaskResponse> = await axios.post(`${this.baseURL}/tasks`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    })
+    // Create a new task
+    async createTask(data: CreateTaskRequest): Promise<CreateTaskResponse> {
+        const formData = new FormData()
+        formData.append("msg", data.msg)
 
-    return response.data
-  }
+        if (data.files && data.files.length > 0) {
+            data.files.forEach((file, index) => {
+                formData.append(`file_${index}`, file)
+            })
+        }
 
-  // Read task status
-  async getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
-    const response: AxiosResponse<TaskStatusResponse> = await axios.get(`${this.baseURL}/tasks/${taskId}`)
+        /*const response: AxiosResponse<CreateTaskResponse> = await this.http.post(`tasks`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        })*/
 
-    return response.data
-  }
+        const response: AxiosResponse<CreateTaskResponse> = await this.http.post(`tasks`, data, {
+              headers: {
+                  "Content-Type": "application/json"
+              },
+          })
 
-  // Update task (if needed for future functionality)
-  async updateTask(taskId: string, data: Partial<CreateTaskRequest>): Promise<TaskStatusResponse> {
-    const response: AxiosResponse<TaskStatusResponse> = await axios.put(`${this.baseURL}/tasks/${taskId}`, data)
+        return response.data
+    }
 
-    return response.data
-  }
+    // Read task status
+    async getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
+        const response: AxiosResponse<TaskStatusResponse> = await this.http.get(`tasks/${taskId}`)
 
-  // Delete task (if needed for future functionality)
-  async deleteTask(taskId: string): Promise<void> {
-    await axios.delete(`${this.baseURL}/tasks/${taskId}`)
-  }
+        return response.data
+    }
 
-  // Get all tasks for current session
-  async getAllTasks(): Promise<Task[]> {
-    const response: AxiosResponse<Task[]> = await axios.get(`${this.baseURL}/tasks`)
+    // Update task (if needed for future functionality)
+    async updateTask(taskId: string, data: Partial<CreateTaskRequest>): Promise<TaskStatusResponse> {
+        const response: AxiosResponse<TaskStatusResponse> = await this.http.put(`tasks/${taskId}`, data)
 
-    return response.data
-  }
+        return response.data
+    }
+
+    // Delete task (if needed for future functionality)
+    async deleteTask(taskId: string): Promise<void> {
+        await this.http.delete(`tasks/${taskId}`)
+    }
+
+    // Get all tasks for current session
+    async getAllTasks(): Promise<Task[]> {
+        const response: AxiosResponse<Task[]> = await this.http.get(`tasks`)
+
+        return response.data
+    }
 }
 
 // Export singleton instance
