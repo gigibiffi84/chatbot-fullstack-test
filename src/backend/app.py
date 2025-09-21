@@ -3,16 +3,12 @@
 import os
 import uuid
 from flask import Flask, send_from_directory, jsonify, request, redirect, url_for, session
-from flask_swagger_ui import get_swaggerui_blueprint
 from flasgger import Swagger  # Importa la libreria Flasgger
-import threading
-import time
-import random
 
 
 from flask_cors import CORS
 
-from infrastructure.repository import InMemoryTaskRepository, InMemoryTaskStore
+from src.backend.infrastructure.repository import InMemoryTaskRepository, InMemoryTaskStore
 from src.backend.service.service import TaskServiceSession
 
 TASK_STORE = InMemoryTaskStore()

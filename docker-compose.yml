@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  web:
+    build:
+      context: src
+      dockerfile: Dockerfile
+    image: myapp-backend:latest
+    environment:
+      - FLASK_ENV=production
+    expose:
+      - "8000" # internal only; Nginx connects to this
+    depends_on:
+      - nginx
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    # If you want healthchecks:
+    # healthcheck:
+    #   test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+    #   interval: 10s
+    #   timeout: 3s
+    #   retries: 3

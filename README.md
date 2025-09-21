@@ -22,7 +22,12 @@ Note
 15) Added FE+BE logic integration (send message, poll for response, show response)
 16) Added files integration with fileStructures and blobs as base64
 17) Added fact check compare with pdf viewer
-18) TODO: validate create task with attachements to get only pdf files
-19) TODO: load all task list in session and enable fact check for just completed tasks
-20) TODO: split async operations to update task in two states: file ingestion, ai response received
-21) TODO: create docker image and docker compose to test it like production
+18) Created Dockerfile multi stage to build backend and frontend
+19) TODO: validate create task with attachements to get only pdf files
+20) TODO: load all task list in session and enable fact check for just completed tasks
+21) TODO: split async operations to update task in two states: file ingestion, ai response received
+22) TODO: create docker image and docker compose to test it like production
+
+To run build and start container then go to http://localhost:8000:
+docker build -t chatbot-fullstack-test .
+docker run -p 8000:8000 chatbot-fullstack-test
