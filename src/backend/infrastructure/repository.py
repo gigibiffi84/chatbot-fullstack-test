@@ -12,6 +12,9 @@ class TaskRepository:
     def get_by_id(self, task_id):
         raise NotImplementedError
 
+    def get_by_id_with_attachments(self, task_id):
+        raise NotImplementedError
+
     def create(self, task):
         raise NotImplementedError
 
@@ -57,6 +60,11 @@ class InMemoryTaskStore:
             self._ensure_client(client_id)
             self._tasks_by_client[client_id] = tasks
 
+    #def get_tasks_for_client(self, client_id: str):
+    #    if client_id not in self._data:
+    #        self._data[client_id] = {}
+    #    return self._data[client_id]
+
     def with_lock(self):
         """
         Context manager per operazioni consistenti multi-passaggio.
@@ -89,6 +97,12 @@ class InMemoryTaskRepository(TaskRepository):
             tasks = self._store.get_tasks(self._client_id)
             found = next((task for task in tasks if task.uuid == task_id), None)
             return found.to_dict() if found else None
+
+    def get_by_id_with_attachments(self, task_id):
+        with self._store.with_lock():
+            tasks = self._store.get_tasks(self._client_id)
+            found = next((task for task in tasks if task.uuid == task_id), None)
+            return found.to_dict_with_attachments() if found else None
 
     def create(self, task_data):
         # next_id() è già thread-safe e namespaced per client
@@ -132,3 +146,21 @@ class InMemoryTaskRepository(TaskRepository):
             self._store.set_tasks(self._client_id, tasks)
             return len(tasks) < initial_len
 
+    # def get_task_files(self, task_id):
+    #     """
+    #     Ritorna solo fileStructures e blobs della task.
+    #     """
+    #     t = self._tasks_dict().get(task_id)
+    #     if not t:
+    #         return None
+    #     # Se è un oggetto modello
+    #     if hasattr(t, "file_structures") and hasattr(t, "blobs"):
+    #         return {
+    #             "fileStructures": t.file_structures or [],
+    #             "blobs": t.blobs or []
+    #         }
+    #     # Se per qualche motivo fosse un dict "raw"
+    #     return {
+    #         "fileStructures": t.get("file_structures", []) or t.get("fileStructures", []) or [],
+    #         "blobs": t.get("blobs", []) or []
+    #     }

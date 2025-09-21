@@ -347,11 +347,66 @@ def delete_task(task_id):
       404:
         description: Attività non trovata.
     """
-    repo = get_task_repository()
+
+    client_id = get_or_create_client_id()
+    repo = get_task_repository(client_id)
     ok = repo.delete(task_id)
     if not ok:
         return jsonify({"error": "Task non trovata"}), 404
     return jsonify({"result": True})
+
+
+@app.route('/api/tasks/<string:task_id>/files/<int:file_idx>', methods=['GET'])
+def get_task_files(task_id: str, file_idx: int = 0):
+    """
+    File allegati dell'attività
+    Questo endpoint restituisce esclusivamente fileStructures e blobs per la task indicata.
+    ---
+    tags:
+      - Attività
+    parameters:
+      - name: task_id
+        in: path
+        type: string
+        required: true
+        description: ID della task.
+      - name: file_idx
+        in: path
+        type: integer
+        required: true
+        description: Indice del file da prelevare
+    responses:
+      200:
+        description: File della task.
+        schema:
+          type: object
+          properties:
+            taskId:
+              type: string
+            fileStructures:
+              type: array
+              items:
+                type: object
+            blobs:
+              type: array
+              items:
+                type: string
+      404:
+        description: Attività non trovata.
+    """
+    client_id = get_or_create_client_id()
+    repo = get_task_repository(client_id)
+    files = repo.get_by_id_with_attachments(task_id)
+
+    if files is None:
+        return jsonify({"error": "Task non trovata"}), 404
+    return jsonify({
+        "taskId": task_id,
+        "fileStructures": [files.get("fileStructures", [])[file_idx]], #files.get("fileStructures", []),
+        "blobs": [files.get("blobs", [])[file_idx]]
+    })
+# ..
+
 
 
 

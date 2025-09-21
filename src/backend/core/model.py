@@ -14,3 +14,6 @@ class Task:
 
     def to_dict(self):
         return {'uuid': self.uuid,  'msg': self.msg, 'done': self.done, 'msgresponse': self.msgresponse}
+
+    def to_dict_with_attachments(self):
+        return {**self.to_dict(), 'fileStructures': self.file_structures, 'blobs': self.blobs}
