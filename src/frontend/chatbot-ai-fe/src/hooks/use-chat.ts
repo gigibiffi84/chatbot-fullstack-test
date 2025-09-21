@@ -1,5 +1,5 @@
 import {useState, useCallback, useRef, useEffect} from "react"
-
+import { v4 as uuidv4 } from 'uuid';
 import {usePolling} from "./use-polling"
 import {apiService, type CreateTaskRequest, type TaskStatusResponse} from "../service/api-service"
 
@@ -136,7 +136,7 @@ export function useChat(): UseChatReturn {
 
             try {
                 // Create task via API
-                const uuid = crypto.randomUUID().toString()
+                const uuid = uuidv4()
                 const taskData: CreateTaskRequest = {uuid, msg: message, files}
                 await apiService.createTask(taskData)
 
