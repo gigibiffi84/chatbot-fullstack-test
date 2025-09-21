@@ -38,7 +38,7 @@ def get_task_repository(client_id: str) -> InMemoryTaskRepository:
 
 
 #app = Flask(__name__)
-app = Flask(__name__, static_folder='frontend/chatbot-ai-fe/dist', static_url_path='/static')
+app = Flask(__name__, static_folder='../frontend/chatbot-ai-fe/dist', static_url_path='/static')
 app.secret_key = 'tropp-secret' # Change this to a long, random string!
 swagger = Swagger(app)
 
