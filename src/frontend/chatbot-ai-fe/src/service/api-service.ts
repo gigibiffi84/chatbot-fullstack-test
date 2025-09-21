@@ -6,7 +6,7 @@ export interface Task {
     msg: string
     files?: File[]
     done: boolean
-    msgtext?: string
+    msgresponse?: string
     createdAt: string
     updatedAt: string
 }
@@ -15,6 +15,11 @@ export interface CreateTaskRequest {
     msg: string
     uuid: string
     files?: File[]
+    blobs?: string[]
+    fileStructures?: {
+        filename: string
+        contentType: string
+    }[]
 }
 
 export interface CreateTaskResponse {
@@ -27,6 +32,14 @@ export interface TaskStatusResponse {
     msgresponse?: string
     message: string
 }
+
+const toBase64 = (blob: Blob) =>
+    new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result));
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 
 // API Service class with CRUD operations
 class ApiService {
@@ -43,26 +56,29 @@ class ApiService {
 
     // Create a new task
     async createTask(data: CreateTaskRequest): Promise<CreateTaskResponse> {
-        const formData = new FormData()
+        /*const formData = new FormData()
         formData.append("msg", data.msg)
+        const fileObj = {}*/
 
         if (data.files && data.files.length > 0) {
-            data.files.forEach((file, index) => {
-                formData.append(`file_${index}`, file)
+            data.fileStructures = data.files.map((file) => ({
+                filename: file.name,
+                contentType: file.type
+            }))
+            const base64Promises = data.files.map((file) => {
+                return toBase64(file)
             })
+            data.blobs = await Promise.all(base64Promises)
+
         }
 
-        /*const response: AxiosResponse<CreateTaskResponse> = await this.http.post(`tasks`, formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        })*/
-
         const response: AxiosResponse<CreateTaskResponse> = await this.http.post(`tasks`, data, {
-              headers: {
-                  "Content-Type": "application/json"
-              },
-          })
+            headers: {
+                "Content-Type": "application/json"
+            },
+        })
+
+
 
         return response.data
     }
@@ -98,6 +114,14 @@ class ApiService {
         await this.http.post(`newchat`)
 
         return Promise.resolve(true)
+    }
+
+    async getFileContent(taskId: string, fileName: string): Promise<string> {
+        const response: AxiosResponse<{ content: string }> = await axios.get(
+            `${this.baseURL}/tasks/${taskId}/files/${encodeURIComponent(fileName)}`,
+        )
+
+        return response.data.content
     }
 }
 

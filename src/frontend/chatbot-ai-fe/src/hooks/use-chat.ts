@@ -51,6 +51,15 @@ export function useChat(): UseChatReturn {
                     id: userMessageId,
                     type: "user",
                     content: t.msg})
+                if(t.msgresponse) {
+                    const botMessageId = `bot-${t.id}`
+                    addMessage({
+                        id: botMessageId,
+                        type: "bot",
+                        content: t.msgresponse,
+                        isLoading: false,
+                    })
+                }
             })
         }
         fetchSessionMessages()

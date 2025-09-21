@@ -102,12 +102,13 @@ class InMemoryTaskRepository(TaskRepository):
 
     def update(self, task_id, task_data):
         with self._store.with_lock():
+            mocked_msg = "This is a mocked response from the chatbot. The task has been processed successfully and here's the simulated AI response to your question."
             tasks = self._store.get_tasks(self._client_id)
             task = next((t for t in tasks if t.uuid == task_id), None)
             if task is None:
                 return None
             task.msg = task_data.get('msg', task.msg)
-            task.msgresponse = task_data.get('msgresponse', '') + 'for '+task.msg
+            task.msgresponse = mocked_msg + ' for question '+task.msg
             task.done = task_data.get('done', task.done)
             return task.to_dict()
 
