@@ -54,4 +54,4 @@ EXPOSE 8000
 
 # Run the Flask app via gunicorn
 # CMD ["sh", "-c", "gunicorn backend.app:app"]
-CMD ["sh", "-c", "gunicorn src.backend.app:app"]
+CMD ["sh", "-c", "gunicorn --workers 1 --threads 4 --worker-class gthread src.backend.app:app"]
