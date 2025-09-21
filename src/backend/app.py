@@ -197,10 +197,31 @@ def create_task():
         schema:
           type: object
           properties:
+            uuid:
+              type: string
+              format: uuid
             msg:
               type: string
               example: "Testo della nuova attività"
+            fileStructures:
+              type: array
+              items:
+                type: object
+                properties:
+                  filename:
+                    type: string
+                  contentType:
+                    type: string
+              example:
+                - filename: "Luigi_Bifulco_-_Cover_Letter.pdf"
+                  contentType: "application/pdf"
+            blobs:
+              type: array
+              items:
+                type: string
+              description: "Contenuti file in Base64. Deve avere la stessa lunghezza di fileStructures."
           required:
+            - uuid
             - msg
     responses:
       201:
@@ -224,15 +245,25 @@ def create_task():
     data = request.get_json(silent=True) or {}
     title = data.get("msg")
     uuid = data.get("uuid")
+    file_structures = data.get("fileStructures") or []
+    blobs = data.get("blobs") or []
 
     if not uuid:
         return jsonify({"error": "Campo 'uuid' obbligatorio"}), 400
     if not title:
         return jsonify({"error": "Campo 'msg' obbligatorio"}), 400
+    # Validazione correlazione fileStructures/blobs
+    if file_structures and not isinstance(file_structures, list):
+        return jsonify({"error": "Campo 'fileStructures' deve essere un array"}), 400
+    if blobs and not isinstance(blobs, list):
+        return jsonify({"error": "Campo 'blobs' deve essere un array"}), 400
+    if file_structures and len(file_structures) != len(blobs):
+        return jsonify({"error": "La lunghezza di 'fileStructures' e 'blobs' deve coincidere"}), 400
+
     client_id = get_or_create_client_id()
     repo = get_task_repository(client_id)
     service = TaskServiceSession(repo)
-    task = service.createTask(uuid, title)
+    task = service.createTask(uuid, title, file_structures=file_structures, blobs=blobs)
 
     return jsonify({"task": task}), 201
 

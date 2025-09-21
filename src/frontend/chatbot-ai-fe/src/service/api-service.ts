@@ -71,6 +71,10 @@ class ApiService {
             data.blobs = await Promise.all(base64Promises)
 
         }
+        else{
+            data.fileStructures = []
+            data.blobs = []
+        }
 
         const response: AxiosResponse<CreateTaskResponse> = await this.http.post(`tasks`, data, {
             headers: {

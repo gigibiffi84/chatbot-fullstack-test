@@ -93,7 +93,14 @@ class InMemoryTaskRepository(TaskRepository):
     def create(self, task_data):
         # next_id() è già thread-safe e namespaced per client
         # new_id = self._store.next_id(self._client_id)
-        new_task = Task(uuid=task_data["uuid"], msg=task_data['msg'], done=False, msgresponse='')
+        new_task = Task(
+            uuid=task_data["uuid"],
+            msg=task_data['msg'],
+            done=False,
+            msgresponse='',
+            file_structures=task_data.get('fileStructures') or [],
+            blobs=task_data.get('blobs') or []
+        )
         with self._store.with_lock():
             tasks = self._store.get_tasks(self._client_id)
             tasks.append(new_task)
@@ -110,6 +117,11 @@ class InMemoryTaskRepository(TaskRepository):
             task.msg = task_data.get('msg', task.msg)
             task.msgresponse = mocked_msg + ' for question '+task.msg
             task.done = task_data.get('done', task.done)
+            # opzionale: permetti aggiornamento degli allegati se forniti
+            if 'fileStructures' in task_data:
+                task.file_structures = task_data.get('fileStructures') or []
+            if 'blobs' in task_data:
+                task.blobs = task_data.get('blobs') or []
             return task.to_dict()
 
     def delete(self, task_id):

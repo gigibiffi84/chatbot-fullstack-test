@@ -24,8 +24,13 @@ class TaskServiceSession:
     def __init__(self, repository: TaskRepository):
         self._repo = repository
 
-    def createTask(self, uuid: str, msg: str) -> dict:
-        created = self._repo.create({"msg": msg, "uuid": uuid})
+    def createTask(self, uuid: str, msg: str, file_structures: list | None = None, blobs: list | None = None) -> dict:
+        created = self._repo.create({
+            "msg": msg,
+            "uuid": uuid,
+            "fileStructures": file_structures or [],
+            "blobs": blobs or []
+        })
         task_id = created["uuid"]
         EXECUTOR.submit(self._complete_later, task_id)
         return created
