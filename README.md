@@ -5,22 +5,22 @@ A python + react project to test an API that simulates an interaction with a gen
 Con IDE PyCharm configurare virtualenv e lanciare il progetto con il file app.py presente nella folder backend
 
 # Run frontend
-Installare node 20+ e pnpm
-Lanciare pnpm install dalla folder frontend
-Lanciare il task pnpm run dev per avviare il frontend
+ * Installare node 20+ e pnpm
+ * Lanciare pnpm install dalla folder frontend
+ * Lanciare il task pnpm run dev per avviare il frontend
 
-Il frontend è un progetto VITE che usa un proxy di sviluppo per puntare correttamente al backend
-In modalità container il FE viene servito direttamente dal backend (vedi Dockerfile)
+ * Il frontend è un progetto VITE che usa un proxy di sviluppo per puntare correttamente al backend
+ * In modalità container il FE viene servito direttamente dal backend (vedi Dockerfile)
 
 # Docker build and test container
-docker build -t chatbot-fullstack-test .
-docker run -p 8000:8000 chatbot-fullstack-test
-Successivamente aprire dal browser la URL http://localhost:8000/
+ * docker build -t chatbot-fullstack-test .
+ * docker run -p 8000:8000 chatbot-fullstack-test
+ * Successivamente aprire dal browser la URL http://localhost:8000/
 
 # Per provare tutto lo stack
 Dalla folder root eseguire:
-docker compose up
-Successivamente aprire dal browser la URL http://localhost:8888/
+ * docker compose up
+ * Successivamente aprire dal browser la URL http://localhost:8888/
 
 ### Note del lavoro svolto e punti aperti:
 
