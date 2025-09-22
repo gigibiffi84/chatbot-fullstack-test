@@ -12,7 +12,7 @@ Lanciare il task pnpm run dev per avviare il frontend
 Il frontend è un progetto VITE che usa un proxy di sviluppo per puntare correttamente al backend
 In modalità container il FE viene servito direttamente dal backend (vedi Dockerfile)
 
-# Docker build and test ontainer
+# Docker build and test container
 docker build -t chatbot-fullstack-test .
 docker run -p 8000:8000 chatbot-fullstack-test
 Successivamente aprire dal browser la URL http://localhost:8000/
