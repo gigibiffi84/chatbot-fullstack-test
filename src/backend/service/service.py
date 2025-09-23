@@ -36,10 +36,12 @@ class TaskServiceSession:
         return created
 
     def _complete_later(self, task_id: str):
-        delay = random.uniform(5.0, 10.0)
+        delay = random.uniform(1.0, 5.5)
         time.sleep(delay)
+        #convert delay to string
+        delaystr = str(delay)
         try:
-            self._repo.update(task_id, {"done": True, "msgresponse": "Task completed!"})
+            self._repo.update(task_id, {"done": True, "msgresponse": "Delay: "+delaystr})
         except Exception:
             # Evita crash silenziosi del thread di background
             pass

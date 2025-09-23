@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip wheel --wheel-dir /wheels -r 
 FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    GUNICORN_CMD_ARGS="--bind 0.0.0.0:8000 --workers 3 --timeout 90 --access-logfile - --error-logfile -"
+    GUNICORN_CMD_ARGS="--bind 0.0.0.0:8000 --workers 1 --threads 4 --worker-class gthread --timeout 90 --access-logfile - --error-logfile -"
 WORKDIR /app
 
 # Create a non-root user

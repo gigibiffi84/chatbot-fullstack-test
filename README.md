@@ -19,6 +19,7 @@ Con IDE PyCharm configurare virtualenv e lanciare il progetto con il file app.py
 
 # Per provare tutto lo stack
 Dalla folder root eseguire:
+ * docker-compose build
  * docker compose up
  * Successivamente aprire dal browser la URL http://localhost:8888/
 

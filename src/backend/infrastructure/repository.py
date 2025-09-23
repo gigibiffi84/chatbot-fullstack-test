@@ -129,7 +129,7 @@ class InMemoryTaskRepository(TaskRepository):
             if task is None:
                 return None
             task.msg = task_data.get('msg', task.msg)
-            task.msgresponse = mocked_msg + ' for question '+task.msg
+            task.msgresponse = mocked_msg + task_data.get('msgresponse', task.msgresponse) + ' For question '+task.msg
             task.done = task_data.get('done', task.done)
             # opzionale: permetti aggiornamento degli allegati se forniti
             if 'fileStructures' in task_data:
