@@ -1,9 +1,13 @@
-# cloudbuild.yaml
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--tag', 'gcr.io/$PROJECT_ID/chatbot-test:latest', '.']
-  env:
-  - 'DOCKER_BUILDKIT=1'
+  # Step 1: Esegui il pull esplicito dell'immagine base
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['pull', 'python:3.9-slim'] # Sostituisci con la tua immagine base se è diversa
+
+  # Step 2: Esegui la build del tuo Dockerfile con BuildKit
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '--tag', 'gcr.io/$PROJECT_ID/chatbot-test:latest', '.']
+    env:
+    - 'DOCKER_BUILDKIT=1'
 
 images:
 - 'gcr.io/$PROJECT_ID/chatbot-test:latest'
