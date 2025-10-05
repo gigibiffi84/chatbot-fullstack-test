@@ -9,19 +9,24 @@ RUN pnpm install --frozen-lockfile
 COPY src/frontend/chatbot-ai-fe ./
 RUN pnpm build
 
-# 2) Backend builder (optional: wheels layer for faster installs)
+# ---
+# 2) Backend builder (no BuildKit)
+# ---
 FROM python:3.12-slim AS backend-builder
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 WORKDIR /app/src/backend
 # Se usi requirements.txt
 COPY src/backend/requirements.txt ./requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip pip wheel --wheel-dir /wheels -r requirements.txt
+# Sostituito l'uso di --mount con un approccio standard per la cache di pip
+RUN pip wheel --wheel-dir /wheels -r requirements.txt
 # In alternativa con pyproject.toml:
 # COPY src/backend/pyproject.toml src/backend/poetry.lock* ./
 # RUN pip install --no-cache-dir poetry && poetry build -f wheel && mkdir -p /wheels && cp dist/*.whl /wheels/
 
+# ---
 # 3) Final runtime image
+# ---
 FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
