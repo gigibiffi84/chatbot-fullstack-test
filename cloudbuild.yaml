@@ -7,7 +7,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '--tag', 'gcr.io/$PROJECT_ID/chatbot-test:latest', '.']
     env:
-    - 'DOCKER_BUILDKIT=1'
+    - 'DOCKER_BUILDKIT=0'
 
 images:
 - 'gcr.io/$PROJECT_ID/chatbot-test:latest'
